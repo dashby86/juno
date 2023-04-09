@@ -52,10 +52,14 @@ func NewGame() (*Game, error) {
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		g.junoPos.Translate(-5, 0)
+		g.junoImageOpts = LeftFacing(g)
 	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyD) {
 		g.junoPos.Translate(5, 0)
+		g.junoImageOpts = RightFacing(g)
 	}
+
 	return nil
 }
 
@@ -79,18 +83,19 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
 }
 
-func LeftFacing(pos *ebiten.GeoM, img *ebiten.Image) ebiten.GeoM {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(-1, 1)
-	op.GeoM.Translate(float64(img.Bounds().Max.X), 0)
-	op.GeoM.Concat(pos)
-	return op.GeoM
+func LeftFacing(g *Game) ebiten.DrawImageOptions {
+	return ebiten.DrawImageOptions{
+		Image: g.junoImage,
+		GeoM:  g.junoPos,
+	}
 }
 
-func RightFacing(pos *ebiten.GeoM, img *ebiten.Image) ebiten.GeoM {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Concat(pos)
-	return op.GeoM
+func RightFacing(g *Game) ebiten.DrawImageOptions {
+	return ebiten.DrawImageOptions{
+		Image: g.junoImage,
+		GeoM:  g.junoPos,
+		FX:    ebiten.FlipHorizontal,
+	}
 }
 
 func main() {
