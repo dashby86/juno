@@ -79,11 +79,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	junoPos := ebiten.GeoM{}
+	junoPos.Translate(screenWidth/2, float64(screenHeight-junoImage.Bounds().Max.Y))
+
 	g := &game{
 		oniImage:  oniImage,
 		junoImage: junoImage,
+		oniPos:    ebiten.GeoM{},
+		junoPos:   junoPos,
 	}
 
+	ebiten.SetFullscreen(true)
 	err = ebiten.RunGame(g)
 	if err != nil {
 		return
