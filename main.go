@@ -1,10 +1,15 @@
 package main
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	_ "image/png"
 	"log"
+
+	"github.com/hajimehoshi/ebiten/v2"
+)
+
+const (
+	screenWidth  = 640
+	screenHeight = 480
 )
 
 type Game struct {
@@ -13,6 +18,35 @@ type Game struct {
 	oniImage  *ebiten.Image
 	junoPos   ebiten.GeoM
 	oniPos    ebiten.GeoM
+}
+
+func NewGame() (*Game, error) {
+	bg, err := ebiten.NewImageFromFile("./assets/background.png")
+	if err != nil {
+		return nil, err
+	}
+
+	juno, err := ebiten.NewImageFromFile("./assets/juno.png")
+	if err != nil {
+		return nil, err
+	}
+
+	oni, err := ebiten.NewImageFromFile("./assets/oni.png")
+	if err != nil {
+		return nil, err
+	}
+
+	g := &Game{
+		bgImage:   bg,
+		junoImage: juno,
+		oniImage:  oni,
+		junoPos:   ebiten.GeoM{},
+		oniPos:    ebiten.GeoM{},
+	}
+	g.junoPos.Translate(50, 50)
+	g.oniPos.Translate(300, 50)
+
+	return g, nil
 }
 
 func (g *Game) Update() error {
@@ -26,67 +60,43 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	screen.DrawImage(g.bgImage, nil)
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(g.bgPos.X, g.bgPos.Y)
-	screen.DrawImage(g.bgImage, op)
-
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(g.junoPos.X, g.junoPos.Y)
-	if g.isJunoFacingRight {
-		op.GeoM.Scale(-1, 1)
-		op.GeoM.Translate(-float64(g.junoImage.Bounds().Size().X), 0)
+	op.GeoM.Concat(&g.junoPos)
+	if ebiten.IsKeyPressed(ebiten.KeyA) {
+		op.GeoM = LeftFacing(&g.junoPos, g.junoImage)
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyD) {
+		op.GeoM = RightFacing(&g.junoPos, g.junoImage)
 	}
 	screen.DrawImage(g.junoImage, op)
-
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(g.oniPos.X, g.oniPos.Y)
-	if g.isOniFacingRight {
-		op.GeoM.Scale(-1, 1)
-		op.GeoM.Translate(-float64(g.oniImage.Bounds().Size().X), 0)
-	}
+	op.GeoM.Concat(&g.oniPos)
 	screen.DrawImage(g.oniImage, op)
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 640, 480
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
+}
+
+func LeftFacing(pos *ebiten.GeoM, img *ebiten.Image) ebiten.GeoM {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(-1, 1)
+	op.GeoM.Translate(float64(img.Bounds().Max.X), 0)
+	op.GeoM.Concat(pos)
+	return op.GeoM
+}
+
+func RightFacing(pos *ebiten.GeoM, img *ebiten.Image) ebiten.GeoM {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Concat(pos)
+	return op.GeoM
 }
 
 func main() {
-	// Load the background image
-	bgImage, _, err := ebitenutil.NewImageFromFile("assets/background.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Load the Juno image
-	junoImage, _, err := ebitenutil.NewImageFromFile("assets/juno.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Load the Oni image
-	oniImage, _, err := ebitenutil.NewImageFromFile("assets/oni.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create the game object
-	game := &Game{
-		bgImage:   bgImage,
-		junoImage: junoImage,
-		oniImage:  oniImage,
-		junoPos:   ebiten.GeoM{},
-		oniPos:    ebiten.GeoM{},
-	}
-
-	// Set the initial positions of the characters
-	game.junoPos.Translate(0, 200)
-	game.oniPos.Translate(400, 200)
-
-	// Run the game
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Juno")
-	if err := ebiten.RunGame(game); err != nil {
+	if err := ebiten.RunGame(NewGame()); err != nil {
 		log.Fatal(err)
 	}
 }
