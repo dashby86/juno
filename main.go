@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"image/color"
 	_ "image/png"
 	"log"
 
@@ -63,20 +66,25 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
-	screen.DrawImage(g.bgImage, nil)
+func (g *Game) draw(screen *ebiten.Image) {
+	// Draw the background image
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Concat(&g.junoPos)
-	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		op.GeoM = LeftFacing(&g.junoPos, g.junoImage)
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		op.GeoM = RightFacing(&g.junoPos, g.junoImage)
-	}
-	screen.DrawImage(g.junoImage, op)
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Concat(&g.oniPos)
-	screen.DrawImage(g.oniImage, op)
+	op.GeoM.Scale(2, 2)
+	screen.DrawImage(g.bgImage, op)
+
+	// Draw Juno
+	junoOp := LeftFacing(&g.junoPos, g.junoImage)
+	junoOp.GeoM.Scale(2, 2)
+	screen.DrawImage(g.junoImage, &junoOp)
+
+	// Draw the oni
+	oniOp := RightFacing(&g.oniPos, g.oniImage)
+	oniOp.GeoM.Scale(2, 2)
+	screen.DrawImage(g.oniImage, &oniOp)
+
+	// Draw the score
+	scoreText := fmt.Sprintf("Score: %d", g.score)
+	text.Draw(screen, scoreText, mplusBigFont, screenWidth/2, 60, color.Black)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
