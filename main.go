@@ -1,115 +1,102 @@
 package main
 
 import (
-	"fmt"
-	"github.com/hajimehoshi/ebiten/v2/text"
-	"image/color"
-	_ "image/png"
+	"github.com/hajimehoshi/ebiten"
 	"log"
-
-	"github.com/hajimehoshi/ebiten/v2"
-)
-
-const (
-	screenWidth  = 640
-	screenHeight = 480
 )
 
 type Game struct {
-	bgImage   *ebiten.Image
-	junoImage *ebiten.Image
-	oniImage  *ebiten.Image
-	junoPos   ebiten.GeoM
-	oniPos    ebiten.GeoM
+	junoImage  *ebiten.Image
+	oniImage   *ebiten.Image
+	bgImage    *ebiten.Image
+	junoPos    ebiten.GeoM
+	oniPos     ebiten.GeoM
+	screenSize struct {
+		W, H int
+	}
 }
 
 func NewGame() (*Game, error) {
-	bg, err := ebiten.NewImageFromFile("./assets/background.png")
+	junoImage, _, err := ebitenutil.NewImageFromFile("assets/juno.png", ebiten.FilterDefault)
+	if err != nil {
+		return nil, err
+	}
+	oniImage, _, err := ebitenutil.NewImageFromFile("assets/oni.png", ebiten.FilterDefault)
+	if err != nil {
+		return nil, err
+	}
+	bgImage, _, err := ebitenutil.NewImageFromFile("assets/background.png", ebiten.FilterDefault)
 	if err != nil {
 		return nil, err
 	}
 
-	juno, err := ebiten.NewImageFromFile("./assets/juno.png")
-	if err != nil {
-		return nil, err
+	game := &Game{
+		junoImage: junoImage,
+		oniImage:  oniImage,
+		bgImage:   bgImage,
+		screenSize: struct {
+			W, H int
+		}{
+			W: 640,
+			H: 480,
+		},
 	}
 
-	oni, err := ebiten.NewImageFromFile("./assets/oni.png")
-	if err != nil {
-		return nil, err
-	}
+	game.junoPos.Scale(2, 2)
+	game.junoPos.Translate(0, float64(game.screenSize.H)/2)
 
-	g := &Game{
-		bgImage:   bg,
-		junoImage: juno,
-		oniImage:  oni,
-		junoPos:   ebiten.GeoM{},
-		oniPos:    ebiten.GeoM{},
-	}
-	g.junoPos.Translate(50, 50)
-	g.oniPos.Translate(300, 50)
+	game.oniPos.Scale(2, 2)
+	game.oniPos.Translate(float64(game.screenSize.W)-float64(game.oniImage.Bounds().Max.X)*2, float64(game.screenSize.H)/2)
 
-	return g, nil
+	return game, nil
 }
 
-func (g *Game) Update() error {
-	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.junoPos.Translate(-5, 0)
-		g.junoImageOpts = LeftFacing(g)
+func (g *Game) Update(screen *ebiten.Image) error {
+	return nil
+}
+
+func LeftFacing(gm *ebiten.GeoM, img *ebiten.Image) ebiten.DrawImageOptions {
+	opts := ebiten.DrawImageOptions{}
+	opts.GeoM.Scale(-1, 1)
+	opts.GeoM.Concat(gm)
+	opts.GeoM.Translate(-float64(img.Bounds().Size().X), 0)
+	return opts
+}
+
+func RightFacing(gm *ebiten.GeoM, img *ebiten.Image) ebiten.DrawImageOptions {
+	opts := ebiten.DrawImageOptions{}
+	opts.GeoM.Concat(gm)
+	return opts
+}
+
+func (g *Game) draw(screen *ebiten.Image) error {
+	// Draw the background image.
+	op := &ebiten.DrawImageOptions{}
+	screen.DrawImage(g.bgImage, op)
+
+	// Draw Juno and Oni, facing left or right depending on their respective velocities.
+	if g.junoVelX < 0 {
+		op := LeftFacing(&g.junoPos, g.junoImage)
+		screen.DrawImage(g.junoImage, op)
+	} else {
+		op := RightFacing(&g.junoPos, g.junoImage)
+		screen.DrawImage(g.junoImage, op)
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.junoPos.Translate(5, 0)
-		g.junoImageOpts = RightFacing(g)
+	if g.oniVelX < 0 {
+		op := LeftFacing(&g.oniPos, g.oniImage)
+		screen.DrawImage(g.oniImage, op)
+	} else {
+		op := RightFacing(&g.oniPos, g.oniImage)
+		screen.DrawImage(g.oniImage, op)
 	}
 
 	return nil
 }
 
-func (g *Game) draw(screen *ebiten.Image) {
-	// Draw the background image
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(2, 2)
-	screen.DrawImage(g.bgImage, op)
-
-	// Draw Juno
-	junoOp := LeftFacing(&g.junoPos, g.junoImage)
-	junoOp.GeoM.Scale(2, 2)
-	screen.DrawImage(g.junoImage, &junoOp)
-
-	// Draw the oni
-	oniOp := RightFacing(&g.oniPos, g.oniImage)
-	oniOp.GeoM.Scale(2, 2)
-	screen.DrawImage(g.oniImage, &oniOp)
-
-	// Draw the score
-	scoreText := fmt.Sprintf("Score: %d", g.score)
-	text.Draw(screen, scoreText, mplusBigFont, screenWidth/2, 60, color.Black)
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
-}
-
-func LeftFacing(g *Game) ebiten.DrawImageOptions {
-	return ebiten.DrawImageOptions{
-		Image: g.junoImage,
-		GeoM:  g.junoPos,
-	}
-}
-
-func RightFacing(g *Game) ebiten.DrawImageOptions {
-	return ebiten.DrawImageOptions{
-		Image: g.junoImage,
-		GeoM:  g.junoPos,
-		FX:    ebiten.FlipHorizontal,
-	}
-}
-
 func main() {
-	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowTitle("Juno")
-	if err := ebiten.RunGame(NewGame()); err != nil {
+	game := NewGame()
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
 }
