@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -39,12 +40,13 @@ func (g *game) Update() error {
 	oniSpeed := 2.0
 	var oniPos ebiten.GeoM
 	oniPos.Concat(g.oniPos)
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) {
-		oniPos.Translate(-oniSpeed, 0)
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyRight) {
-		oniPos.Translate(oniSpeed, 0)
-	}
+
+	// Move towards Juno
+	dx := g.junoPos.Element(0, 2) - g.oniPos.Element(0, 2)
+	dy := g.junoPos.Element(1, 2) - g.oniPos.Element(1, 2)
+	angle := math.Atan2(dy, dx)
+	oniPos.Translate(math.Cos(angle)*oniSpeed, math.Sin(angle)*oniSpeed)
+
 	g.oniPos = oniPos
 
 	return nil
