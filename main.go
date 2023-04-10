@@ -2,11 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"math"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"log"
+	"math"
 )
 
 const (
@@ -24,6 +23,11 @@ type game struct {
 }
 
 func (g *game) Update() error {
+	// Exit the game if the Escape key is pressed
+	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		return fmt.Errorf("game is closed")
+	}
+
 	// Update Juno position
 	junoSpeed := 4.0
 	var junoPos ebiten.GeoM
@@ -53,6 +57,15 @@ func (g *game) Update() error {
 }
 
 func (g *game) Draw(screen *ebiten.Image) {
+	// Draw background
+	bgImage, _, err := ebitenutil.NewImageFromFile("assets/background.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	op := &ebiten.DrawImageOptions{}
+	screen.DrawImage(bgImage, op)
+
+	// Draw Oni and Juno
 	screen.DrawImage(g.oniImage, &ebiten.DrawImageOptions{
 		GeoM: g.oniPos,
 	})
@@ -60,6 +73,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 		GeoM: g.junoPos,
 	})
 
+	// Draw FPS counter
 	fps := ebiten.CurrentFPS()
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %0.2f", fps))
 }
@@ -80,6 +94,8 @@ func main() {
 	}
 
 	junoPos := ebiten.GeoM{}
+	//junoPos.Translate(screenWidth/4, screenHeight/2)
+
 	junoPos.Translate(screenWidth/2, float64(screenHeight-junoImage.Bounds().Max.Y))
 
 	g := &game{
@@ -89,7 +105,8 @@ func main() {
 		junoPos:   junoPos,
 	}
 
-	ebiten.SetFullscreen(true)
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetFullscreen(false)
 	err = ebiten.RunGame(g)
 	if err != nil {
 		return
