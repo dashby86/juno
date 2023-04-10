@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/dashby86/juno/structs"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"log"
 )
 
 const (
@@ -47,20 +48,18 @@ func main() {
 
 	// Create and configure camera
 	cam := &structs.Camera{
-		x:       screenWidth / 2,
-		y:       screenHeight / 2,
-		speed:   4.0,
-		zoom:    1.0,
-		minZoom: 0.5,
-		maxZoom: 2.0,
+		X:     screenWidth / 2,
+		Y:     screenHeight / 2,
+		Speed: 4.0,
+		Zoom:  1.0,
 	}
 
 	g = &structs.Game{
-		oniImage:  oniImage,
-		junoImage: junoImage,
-		oniPos:    ebiten.GeoM{},
-		junoPos:   junoPos,
-		camera:    cam, // Pass camera to game struct
+		OniImage:  oniImage,
+		JunoImage: junoImage,
+		OniPos:    ebiten.GeoM{},
+		JunoPos:   junoPos,
+		Camera:    cam, // Pass camera to game struct
 	}
 
 	ebiten.SetWindowSize(screenWidth, screenHeight)
