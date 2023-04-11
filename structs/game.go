@@ -1,7 +1,6 @@
 package structs
 
 import (
-	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -15,91 +14,76 @@ type Game struct {
 	Camera     *Camera
 }
 
-const (
-	oniX  = 200
-	oniY  = 200
-	junoX = 100
-	junoY = 100
-)
+func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, screenHeight int) (*Game, error) {
+	oniImg, _, err := ebitenutil.NewImageFromFile(oniImagePath)
+	if err != nil {
+		return nil, err
+	}
 
-func NewGame() (*Game, error) {
-	oniImage, _, err := ebitenutil.NewImageFromFile("oni.png")
+	junoImg, _, err := ebitenutil.NewImageFromFile(junoImagePath)
 	if err != nil {
 		return nil, err
 	}
-	junoImage, _, err := ebitenutil.NewImageFromFile("juno.png")
+
+	bgImg, _, err := ebitenutil.NewImageFromFile(bgImagePath)
 	if err != nil {
 		return nil, err
 	}
-	bgImage, _, err := ebitenutil.NewImageFromFile("background.png")
-	if err != nil {
-		return nil, err
-	}
-	oniPos := ebiten.GeoM{}
-	oniPos.Translate(oniX, oniY)
-	junoPos := ebiten.GeoM{}
-	junoPos.Translate(junoX, junoY)
+
 	game := &Game{
-		OniImage:   oniImage,
-		JunoImage:  junoImage,
-		Background: bgImage,
-		OniPos:     oniPos,
-		JunoPos:    junoPos,
-		Camera:     &Camera{X: 0, Y: 0, Zoom: 1},
+		OniImage:   oniImg,
+		JunoImage:  junoImg,
+		Background: bgImg,
+		Camera:     &Camera{},
 	}
+
+	game.JunoPos = ebiten.GeoM{}
+	game.JunoPos.Translate(float64(screenWidth/2), float64(screenHeight-junoImg.Bounds().Max.Y))
+
+	game.Camera.PosX = game.JunoPos.Element(0, 0) + float64(junoImg.Bounds().Max.X)/2
+	game.Camera.PosY = game.JunoPos.Element(0, 1) + float64(junoImg.Bounds().Max.Y)/2
 
 	return game, nil
 }
 
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.JunoPos.Translate(-10, 0)
+		g.JunoPos.Translate(-3, 0)
 	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.JunoPos.Translate(10, 0)
+		g.JunoPos.Translate(3, 0)
 	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.JunoPos.Translate(0, -10)
+		g.JunoPos.Translate(0, -3)
 	}
+
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.JunoPos.Translate(0, 10)
+		g.JunoPos.Translate(0, 3)
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyQ) {
-		g.Camera.ZoomIn()
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyE) {
-		g.Camera.ZoomOut()
-	}
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		return fmt.Errorf("game is closed")
-	}
+
+	g.Camera.PosX = g.JunoPos.Element(0, 0) + float64(g.JunoImage.Bounds().Max.X)/2
+	g.Camera.PosY = g.JunoPos.Element(0, 1) + float64(g.JunoImage.Bounds().Max.Y)/2
 
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	w, h := g.Background.Size()
-
 	// Draw the background
-	bgOp := &ebiten.DrawImageOptions{}
-	bgOp.GeoM.Concat(g.Camera.GetMatrix())
-	bgOp.GeoM.Translate(float64(w)/2, float64(h)/2)
-	bgOp.GeoM.Translate(-g.Camera.Zoom*float64(w)/2, -g.Camera.Zoom*float64(h)/2)
-	screen.DrawImage(g.Background, bgOp)
+	op := &ebiten.DrawImageOptions{}
+	screen.DrawImage(g.Background, op)
+
+	// Draw the oni
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM = g.OniPos
+	screen.DrawImage(g.OniImage, op)
 
 	// Draw Juno
-	junoOp := &ebiten.DrawImageOptions{}
-	junoOp.GeoM.Concat(g.Camera.GetMatrix())
-	junoOp.GeoM.Concat(g.JunoPos)
-	junoOp.GeoM.Translate(-float64(g.JunoImage.Bounds().Dx())/2, -float64(g.JunoImage.Bounds().Dy())/2)
-	screen.DrawImage(g.JunoImage, junoOp)
-
-	// Draw Oni
-	oniOp := &ebiten.DrawImageOptions{}
-	oniOp.GeoM.Concat(g.Camera.GetMatrix())
-	oniOp.GeoM.Concat(g.OniPos)
-	oniOp.GeoM.Translate(-float64(g.OniImage.Bounds().Dx())/2, -float64(g.OniImage.Bounds().Dy())/2)
-	screen.DrawImage(g.OniImage, oniOp)
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM = g.JunoPos
+	op.GeoM.Translate(-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, -g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
+	screen.DrawImage(g.JunoImage, op)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

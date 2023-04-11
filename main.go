@@ -13,8 +13,6 @@ const (
 	screenHeight = 480
 )
 
-var g *structs.Game
-
 func main() {
 	oniImage, _, err := ebitenutil.NewImageFromFile("assets/oni.png")
 	if err != nil {
@@ -45,13 +43,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	g = &structs.Game{
-		OniImage:   oniImage,
-		JunoImage:  junoImage,
-		OniPos:     ebiten.GeoM{},
-		JunoPos:    junoPos,
-		Camera:     cam,
-		Background: backgroundImage,
+	g, err := structs.NewGame(oniImage, junoImage, "assets/background.png", screenWidth, screenHeight)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	ebiten.SetWindowSize(screenWidth, screenHeight)

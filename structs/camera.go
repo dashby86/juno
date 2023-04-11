@@ -9,6 +9,8 @@ type Camera struct {
 	Zoom    float64
 	MinZoom float64
 	MaxZoom float64
+	PosX    float64
+	PosY    float64
 }
 
 func (c *Camera) Move(dx, dy float64) {
