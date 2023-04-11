@@ -39,3 +39,10 @@ func (c *Camera) Apply(screen *ebiten.Image) {
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
 	screen.DrawImage(screen, op)
 }
+
+func (c *Camera) GetMatrix() ebiten.GeoM {
+	var matrix ebiten.GeoM
+	matrix.Translate(-c.X, -c.Y)
+	matrix.Scale(c.Zoom, c.Zoom)
+	return matrix
+}
