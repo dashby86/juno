@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -32,19 +33,20 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		return nil, err
 	}
 
+	junoPos := ebiten.GeoM{}
+	junoPos.Translate(float64(screenWidth/2), float64(screenHeight-junoImg.Bounds().Max.Y))
+
 	game := &Game{
 		OniImage:   oniImg,
 		JunoImage:  junoImg,
 		Background: bgImg,
 		Camera:     &Camera{},
 		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
+		JunoPos:    junoPos,           // assign the GeoM to the JunoPos field
 	}
 
-	game.JunoPos = ebiten.GeoM{}
-	game.JunoPos.Translate(float64(screenWidth/2), float64(screenHeight-junoImg.Bounds().Max.Y))
-
-	game.Camera.PosX = game.JunoPos.Element(0, 0) + float64(junoImg.Bounds().Max.X)/2
-	game.Camera.PosY = game.JunoPos.Element(0, 1) + float64(junoImg.Bounds().Max.Y)/2
+	game.Camera.PosX = float64(screenWidth) / 2
+	game.Camera.PosY = float64(screenHeight) / 2
 
 	return game, nil
 }
@@ -66,6 +68,12 @@ func (g *Game) Update() error {
 		g.JunoPos.Translate(0, 3)
 	}
 
+	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		return fmt.Errorf("game is closed")
+	}
+
+	g.JunoPos = junoPos
+
 	g.Camera.PosX = g.JunoPos.Element(0, 0) + float64(g.JunoImage.Bounds().Max.X)/2
 	g.Camera.PosY = g.JunoPos.Element(0, 1) + float64(g.JunoImage.Bounds().Max.Y)/2
 
@@ -83,6 +91,7 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw the background
 	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, -g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
 	screen.DrawImage(g.Background, op)
 
 	// Draw the enemies
@@ -94,8 +103,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Draw Juno
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM = g.JunoPos
-	op.GeoM.Translate(-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, -g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
+	op.GeoM.Translate(g.Camera.PosX-float64(g.JunoImage.Bounds().Max.X)/2, g.Camera.PosY-float64(g.JunoImage.Bounds().Max.Y)/2)
 	screen.DrawImage(g.JunoImage, op)
 }
 

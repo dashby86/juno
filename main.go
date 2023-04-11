@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	screenWidth  = 1280
-	screenHeight = 960
+	screenWidth  = 1920
+	screenHeight = 1080
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 	}
 
 	enemies := make([]*structs.Enemy, 0)
-	enemy1, err := structs.NewEnemy("assets/oni.png", structs.Vec2{X: 100, Y: 100}, 20)
+	enemy1, err := structs.NewEnemy("assets/oni.png", structs.Vec2{X: 100, Y: 100}, 2)
 	if err != nil {
 		log.Fatal(err)
 	}
