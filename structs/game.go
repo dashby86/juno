@@ -2,16 +2,15 @@ package structs
 
 import (
 	"fmt"
+	"github.com/dashby86/juno/juno"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Game struct {
 	OniImage   *ebiten.Image
-	JunoImage  *ebiten.Image
+	Juno       *Juno
 	Background *ebiten.Image
-	OniPos     ebiten.GeoM
-	JunoPos    ebiten.GeoM
 	Camera     *Camera
 	Enemies    []*Enemy // slice to store all enemies
 }
@@ -23,7 +22,7 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		return nil, err
 	}
 
-	junoImg, _, err := ebitenutil.NewImageFromFile(junoImagePath)
+	juno, err := NewJuno(junoImagePath, screenWidth, screenHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -33,16 +32,12 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		return nil, err
 	}
 
-	junoPos := ebiten.GeoM{}
-	junoPos.Translate(float64(screenWidth/2), float64(screenHeight-junoImg.Bounds().Max.Y))
-
 	game := &Game{
 		OniImage:   oniImg,
-		JunoImage:  junoImg,
+		Juno:       juno,
 		Background: bgImg,
 		Camera:     &Camera{},
 		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
-		JunoPos:    junoPos,           // assign the GeoM to the JunoPos field
 	}
 
 	game.Camera.PosX = float64(screenWidth) / 2
@@ -53,19 +48,19 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		g.JunoPos.Translate(-3, 0)
+		g.Juno.MoveLeft()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		g.JunoPos.Translate(3, 0)
+		g.Juno.MoveRight()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyW) {
-		g.JunoPos.Translate(0, -3)
+		g.Juno.MoveUp()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyS) {
-		g.JunoPos.Translate(0, 3)
+		g.Juno.MoveDown()
 	}
 
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
@@ -74,10 +69,10 @@ func (g *Game) Update() error {
 
 	g.JunoPos = junoPos
 
-	g.Camera.PosX = g.JunoPos.Element(0, 0) + float64(g.JunoImage.Bounds().Max.X)/2
-	g.Camera.PosY = g.JunoPos.Element(0, 1) + float64(g.JunoImage.Bounds().Max.Y)/2
+	g.Camera.PosX = g.Juno.Position.X + float64(g.Juno.Width)/2
+	g.Camera.PosY = g.Juno.Position.Y + float64(g.Juno.Height)/2
 
-	playerPos := Vec2{X: g.JunoPos.Element(0, 0), Y: g.JunoPos.Element(0, 1)}
+	playerPos := Vec2{X: g.Juno.Position.X, Y: g.Juno.Position.Y}
 
 	// update all enemies
 	for _, enemy := range g.Enemies {
@@ -102,9 +97,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// Draw Juno
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(g.Camera.PosX-float64(g.JunoImage.Bounds().Max.X)/2, g.Camera.PosY-float64(g.JunoImage.Bounds().Max.Y)/2)
-	screen.DrawImage(g.JunoImage, op)
+	g.Juno.Draw(screen, g.Camera.PosX, g.Camera.PosY)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
