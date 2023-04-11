@@ -48,18 +48,27 @@ func main() {
 
 	// Create and configure camera
 	cam := &structs.Camera{
-		X:     screenWidth / 2,
-		Y:     screenHeight / 2,
-		Speed: 4.0,
-		Zoom:  1.0,
+		X:       screenWidth / 2,
+		Y:       screenHeight / 2,
+		Speed:   4.0,
+		Zoom:    1.0,
+		MinZoom: 0.5,
+		MaxZoom: 2.0,
+	}
+
+	// Create and configure background
+	backgroundImage, _, err := ebitenutil.NewImageFromFile("assets/background.png")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	g = &structs.Game{
-		OniImage:  oniImage,
-		JunoImage: junoImage,
-		OniPos:    ebiten.GeoM{},
-		JunoPos:   junoPos,
-		Camera:    cam, // Pass camera to game struct
+		OniImage:   oniImage,
+		JunoImage:  junoImage,
+		OniPos:     ebiten.GeoM{},
+		JunoPos:    junoPos,
+		Camera:     cam,
+		Background: backgroundImage,
 	}
 
 	ebiten.SetWindowSize(screenWidth, screenHeight)

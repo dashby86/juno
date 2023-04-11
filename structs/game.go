@@ -1,78 +1,61 @@
 package structs
 
 import (
-	"fmt"
-	"math"
-
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-const (
-	screenWidth  = 640
-	screenHeight = 480
-)
-
 type Game struct {
-	OniImage  *ebiten.Image
-	JunoImage *ebiten.Image
-	OniPos    ebiten.GeoM
-	JunoPos   ebiten.GeoM
-	Camera    *Camera // Pointer to camera struct
+	OniImage   *ebiten.Image
+	JunoImage  *ebiten.Image
+	Background *ebiten.Image
+	OniPos     ebiten.GeoM
+	JunoPos    ebiten.GeoM
+	Camera     *Camera
 }
 
 func (g *Game) Update() error {
-	// Exit the game if the Escape key is pressed
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		return fmt.Errorf("game is closed")
-	}
-
-	// Update Juno position
-	junoSpeed := 4.0
-	var junoPos ebiten.GeoM
-	junoPos.Concat(g.JunoPos)
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		junoPos.Translate(-junoSpeed, 0)
+		g.Camera.Move(-1, 0)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyD) {
-		junoPos.Translate(junoSpeed, 0)
+		g.Camera.Move(1, 0)
 	}
-	g.JunoPos = junoPos
-
-	// Update Oni position
-	oniSpeed := 2.0
-	var oniPos ebiten.GeoM
-	oniPos.Concat(g.OniPos)
-
-	// Move towards Juno
-	dx := g.JunoPos.Element(0, 2) - g.OniPos.Element(0, 2)
-	dy := g.JunoPos.Element(1, 2) - g.OniPos.Element(1, 2)
-	angle := math.Atan2(dy, dx)
-	oniPos.Translate(math.Cos(angle)*oniSpeed, math.Sin(angle)*oniSpeed)
-
-	g.OniPos = oniPos
-
+	if ebiten.IsKeyPressed(ebiten.KeyW) {
+		g.Camera.Move(0, -1)
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyS) {
+		g.Camera.Move(0, 1)
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyQ) {
+		g.Camera.ZoomIn()
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyE) {
+		g.Camera.ZoomOut()
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Apply camera transform matrix
-	geoM := ebiten.GeoM{}
-	geoM.Translate(-g.Camera.X, -g.Camera.Y)
-	geoM.Scale(g.Camera.Zoom, g.Camera.Zoom)
-	screen.DrawImage(g.OniImage, &ebiten.DrawImageOptions{
-		GeoM: geoM,
-	})
+	w, h := g.Background.Size()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(g.Camera.Zoom, g.Camera.Zoom)
+	op.GeoM.Translate(-g.Camera.X, -g.Camera.Y)
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(-g.Camera.Zoom*float64(w)/2, -g.Camera.Zoom*float64(h)/2)
+	screen.DrawImage(g.Background, op)
 
-	// Draw game objects
-	oniImageOpts := &ebiten.DrawImageOptions{}
-	oniImageOpts.GeoM = g.OniPos
-	screen.DrawImage(g.OniImage, oniImageOpts)
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Concat(g.JunoPos)
+	screen.DrawImage(g.JunoImage, op)
 
-	junoImageOpts := &ebiten.DrawImageOptions{}
-	junoImageOpts.GeoM = g.JunoPos
-	screen.DrawImage(g.JunoImage, junoImageOpts)
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Concat(g.OniPos)
+	screen.DrawImage(g.OniImage, op)
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	// Set the size of the screen based on the outsideWidth and outsideHeight parameters.
+	// For example, you could set the screen size to be half the size of the outside area:
+	screenWidth, screenHeight = outsideWidth/2, outsideHeight/2
 	return screenWidth, screenHeight
 }
