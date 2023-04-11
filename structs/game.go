@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -69,6 +70,10 @@ func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyE) {
 		g.Camera.ZoomOut()
 	}
+	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+		return fmt.Errorf("game is closed")
+	}
+
 	return nil
 }
 

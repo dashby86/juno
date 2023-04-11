@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/dashby86/juno/structs"
@@ -15,22 +14,6 @@ const (
 )
 
 var g *structs.Game
-
-func update(screen *ebiten.Image) error {
-	if err := g.Update(); err != nil {
-		return err
-	}
-
-	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
-		return fmt.Errorf("game is closed")
-	}
-
-	return nil
-}
-
-func draw(screen *ebiten.Image) {
-	g.Draw(screen)
-}
 
 func main() {
 	oniImage, _, err := ebitenutil.NewImageFromFile("assets/oni.png")
