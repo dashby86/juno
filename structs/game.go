@@ -12,9 +12,11 @@ type Game struct {
 	OniPos     ebiten.GeoM
 	JunoPos    ebiten.GeoM
 	Camera     *Camera
+	Enemies    []*Enemy // slice to store all enemies
 }
 
 func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, screenHeight int) (*Game, error) {
+
 	oniImg, _, err := ebitenutil.NewImageFromFile(oniImagePath)
 	if err != nil {
 		return nil, err
@@ -35,6 +37,7 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		JunoImage:  junoImg,
 		Background: bgImg,
 		Camera:     &Camera{},
+		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
 	}
 
 	game.JunoPos = ebiten.GeoM{}
@@ -66,6 +69,14 @@ func (g *Game) Update() error {
 	g.Camera.PosX = g.JunoPos.Element(0, 0) + float64(g.JunoImage.Bounds().Max.X)/2
 	g.Camera.PosY = g.JunoPos.Element(0, 1) + float64(g.JunoImage.Bounds().Max.Y)/2
 
+	playerPos := Vec2{X: g.JunoPos.Element(0, 0), Y: g.JunoPos.Element(0, 1)}
+
+	// update all enemies
+	for _, enemy := range g.Enemies {
+		dir := playerPos.Sub(enemy.Position)
+		enemy.Update(dir)
+	}
+
 	return nil
 }
 
@@ -74,10 +85,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	screen.DrawImage(g.Background, op)
 
-	// Draw the oni
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM = g.OniPos
-	screen.DrawImage(g.OniImage, op)
+	// Draw the enemies
+	for _, e := range g.Enemies {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(e.Position.X-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, e.Position.Y-g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
+		screen.DrawImage(e.Image, op)
+	}
 
 	// Draw Juno
 	op = &ebiten.DrawImageOptions{}

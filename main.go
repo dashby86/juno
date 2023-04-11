@@ -1,16 +1,15 @@
 package main
 
 import (
-	"log"
-
 	"github.com/dashby86/juno/structs"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"log"
 )
 
 const (
-	screenWidth  = 640
-	screenHeight = 480
+	screenWidth  = 1280
+	screenHeight = 960
 )
 
 func main() {
@@ -26,6 +25,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	enemies := make([]*structs.Enemy, 0)
+	enemy1, err := structs.NewEnemy("assets/oni.png", structs.Vec2{X: 100, Y: 100}, 20)
+	if err != nil {
+		log.Fatal(err)
+	}
+	enemies = append(enemies, enemy1)
+	//enemy2, err := structs.NewEnemy("assets/enemy.png", structs.Vec2{X: 200, Y: 200})
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//enemies = append(enemies, enemy2)
+
+	g.Enemies = enemies
 
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("Juno")
