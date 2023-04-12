@@ -9,7 +9,7 @@ import (
 
 type Game struct {
 	OniImage   *ebiten.Image
-	Juno       *Juno
+	Juno       *juno.Juno
 	Background *ebiten.Image
 	Camera     *Camera
 	Enemies    []*Enemy // slice to store all enemies
@@ -22,10 +22,13 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		return nil, err
 	}
 
-	juno, err := NewJuno(junoImagePath, screenWidth, screenHeight)
+	junoImg, _, err := ebitenutil.NewImageFromFile(junoImagePath)
 	if err != nil {
 		return nil, err
 	}
+
+	j := juno.NewJuno(junoImg, float64(screenWidth), float64(screenHeight), 4)
+	j.Speed = 4 // set Juno's speed to 10 pixels per frame
 
 	bgImg, _, err := ebitenutil.NewImageFromFile(bgImagePath)
 	if err != nil {
@@ -34,7 +37,7 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 
 	game := &Game{
 		OniImage:   oniImg,
-		Juno:       juno,
+		Juno:       j,
 		Background: bgImg,
 		Camera:     &Camera{},
 		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
@@ -67,12 +70,12 @@ func (g *Game) Update() error {
 		return fmt.Errorf("game is closed")
 	}
 
-	g.JunoPos = junoPos
+	x, y := g.Juno.GetPosition()
 
-	g.Camera.PosX = g.Juno.Position.X + float64(g.Juno.Width)/2
-	g.Camera.PosY = g.Juno.Position.Y + float64(g.Juno.Height)/2
+	g.Camera.PosX = x + float64(g.Juno.GetWidth())/2
+	g.Camera.PosY = y + float64(g.Juno.GetHeight())/2
 
-	playerPos := Vec2{X: g.Juno.Position.X, Y: g.Juno.Position.Y}
+	playerPos := Vec2{X: x, Y: y}
 
 	// update all enemies
 	for _, enemy := range g.Enemies {
@@ -87,7 +90,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw the background
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, -g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
-	screen.DrawImage(g.Background, op)
+	w, h := g.Background.Size()
+	for x := -w + int(g.Camera.PosX)%w; x < screen.Bounds().Max.X; x += w {
+		for y := -h + int(g.Camera.PosY)%h; y < screen.Bounds().Max.Y; y += h {
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(x), float64(y))
+			screen.DrawImage(g.Background, op)
+		}
+	}
 
 	// Draw the enemies
 	for _, e := range g.Enemies {
