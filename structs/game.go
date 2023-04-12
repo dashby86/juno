@@ -93,19 +93,25 @@ func (g *Game) Update() error {
 
 	// Apply gravity
 	if !g.Juno.Grounded {
-		g.Juno.VelY -= g.Juno.Gravity
-		g.Juno.Y += g.Juno.VelY // Move this line here
+		g.Juno.VelY += g.Juno.Gravity
+	} else {
+		g.Juno.VelY = 0
 	}
 
 	// Check for collisions with platforms and apply gravity
+	nextY := g.Juno.Y + g.Juno.VelY
 	g.Juno.Grounded = false
 	for _, platform := range g.Platforms {
-		if g.Juno.Y+float64(junoHeight) >= platform.Y && g.Juno.Y+float64(junoHeight) <= platform.Y+platform.Height &&
+		if nextY+float64(junoHeight) >= platform.Y && nextY+float64(junoHeight) <= platform.Y+platform.Height &&
 			g.Juno.X+float64(junoWidth) >= platform.X && g.Juno.X <= platform.X+platform.Width {
 			g.Juno.Grounded = true
 			g.Juno.VelY = 0
 			g.Juno.Y = platform.Y - float64(junoHeight)
 		}
+	}
+
+	if !g.Juno.Grounded {
+		g.Juno.Y = nextY
 	}
 
 	// Update Juno's vertical position
@@ -141,8 +147,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	w, h := g.Background.Size()
 	tileOffsetX := int(g.Camera.PosX) % w
 	tileOffsetY := int(g.Camera.PosY) % h
-	for x := -tileOffsetX - w; x < screen.Bounds().Max.X; x += w {
-		for y := -tileOffsetY - h; y < screen.Bounds().Max.Y; y += h {
+
+	for x := -tileOffsetX - w; x < screenWidth+w; x += w {
+		for y := -tileOffsetY - h; y < screenHeight+h; y += h {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(x), float64(y))
 			screen.DrawImage(g.Background, op)

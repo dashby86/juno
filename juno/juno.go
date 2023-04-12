@@ -71,12 +71,12 @@ func (j *Juno) String() string {
 
 // MoveLeft moves Juno to the left
 func (j *Juno) MoveLeft() {
-	j.X += j.Speed
+	j.X -= j.Speed
 }
 
 // MoveRight moves Juno to the right
 func (j *Juno) MoveRight() {
-	j.X -= j.Speed
+	j.X += j.Speed
 }
 
 // MoveUp moves Juno up
