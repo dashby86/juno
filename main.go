@@ -69,7 +69,7 @@ func main() {
 
 	g.Enemies = enemies
 
-	ebiten.SetWindowSize(screenWidth, screenHeight)
+	//ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetFullscreen(true)
 	ebiten.SetWindowTitle("Juno")
 	if err := ebiten.RunGame(g); err != nil {

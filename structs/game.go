@@ -164,10 +164,11 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw the background
-	w, h := g.Background.Size()
-	tileOffsetX := int(g.Camera.PosX) % w
-	tileOffsetY := int(g.Camera.PosY) % h
+	//w, h := g.Background.Size()
+	//tileOffsetX := int(g.Camera.PosX) % w
+	//tileOffsetY := int(g.Camera.PosY) % h
 
+	/**
 	for x := -tileOffsetX - w; x < screenWidth+w; x += w {
 		for y := -tileOffsetY - h; y < screenHeight+h; y += h {
 			op := &ebiten.DrawImageOptions{}
@@ -175,6 +176,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(g.Background, op)
 		}
 	}
+
+	*/
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-g.Camera.PosX, -g.Camera.PosY)
+	screen.DrawImage(g.Background, op)
 
 	// Draw the platforms
 	for _, p := range g.Platforms {
@@ -193,7 +200,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	x, y := g.Juno.GetPosition()
-	op := &ebiten.DrawImageOptions{}
+	//op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(x-g.Camera.PosX, y-g.Camera.PosY)
 	screen.DrawImage(g.Juno.Image.(*ebiten.Image), op)
 }
