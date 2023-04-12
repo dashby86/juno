@@ -20,7 +20,7 @@ const (
 type Game struct {
 	OniImage   *ebiten.Image
 	Juno       *juno.Juno
-	Background *ebiten.Image
+	Background *Background
 	Camera     *Camera
 	Enemies    []*Enemy
 	Platforms  []*Platform
@@ -38,32 +38,24 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		return nil, err
 	}
 
-	platform3 := NewPlatform(float64(screenWidth)/2-250, float64(screenHeight)/2+float64(junoHeight)+50, 500, 30, colornames.Red)
-	platform1 := NewPlatform(200, 900, 500, 30, colornames.Red)
-	platform2 := NewPlatform(800, 700, 500, 30, colornames.Black)
+	bg := NewBackground(bgImagePath)
+
+	borderTop := NewPlatform(0, 0, float64(screenWidth), 10, colornames.Black)
+	borderBottom := NewPlatform(0, float64(screenHeight)-10, float64(screenWidth), 10, colornames.Black)
+	borderLeft := NewPlatform(0, 0, 10, float64(screenHeight), colornames.Black)
+	borderRight := NewPlatform(float64(screenWidth)-10, 0, 10, float64(screenHeight), colornames.Black)
 
 	j := juno.NewJuno(junoImg, float64(screenWidth), float64(screenHeight), 4)
 	j.Speed = 4 // set Juno's speed to 10 pixels per frame
 
-	// Start Juno on the first platform
-	j.X = float64(platform1.X)
-	j.Y = platform1.Y - float64(junoHeight)
-
-	bgImg, _, err := ebitenutil.NewImageFromFile(bgImagePath)
-	if err != nil {
-		return nil, err
-	}
-
 	game := &Game{
 		OniImage:   oniImg,
 		Juno:       j,
-		Background: bgImg,
+		Background: bg,
 		Camera:     &Camera{},
 		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
 	}
-
-	game.Platforms = []*Platform{platform1, platform2, platform3}
-
+	game.Platforms = []*Platform{borderRight, borderBottom, borderLeft, borderTop}
 	game.Camera.PosX = float64(screenWidth) / 2
 	game.Camera.PosY = float64(screenHeight) / 2
 
@@ -98,46 +90,6 @@ func (g *Game) Update() error {
 		g.Juno.VelY = 0
 	}
 
-	// Check for collisions with platforms and apply gravity
-	nextY := g.Juno.Y + g.Juno.VelY
-	g.Juno.Grounded = false
-	for _, platform := range g.Platforms {
-		if nextY+float64(junoHeight) > platform.Y && nextY < platform.Y+platform.Height &&
-			g.Juno.X+float64(junoWidth) > platform.X && g.Juno.X < platform.X+platform.Width {
-			g.Juno.Grounded = true
-			g.Juno.VelY = 0
-			g.Juno.Y = platform.Y - float64(junoHeight)
-			break
-		}
-	}
-
-	if !g.Juno.Grounded {
-		g.Juno.Y = nextY
-	}
-
-	// Prevent Juno from falling below the screen
-	/**
-	if g.Juno.Y > screenHeight {
-		g.Juno.Y = screenHeight - float64(junoHeight)
-		g.Juno.Grounded = true
-		g.Juno.VelY = 0
-	}
-
-	*/
-
-	/**
-	x, y := g.Juno.GetPosition()
-
-	g.Camera.PosX = x + float64(g.Juno.GetWidth())/2 - float64(screenWidth)/2
-
-	if newY := y + float64(g.Juno.GetHeight())/2 - float64(screenHeight)/2; newY < screenHeight-float64(junoHeight) {
-		g.Camera.PosY = newY
-	} else {
-		g.Camera.PosY = screenHeight - float64(junoHeight)
-	}
-
-
-	*/
 	x, y := g.Juno.GetPosition()
 
 	halfScreenWidth := float64(screenWidth) / 2
@@ -153,6 +105,8 @@ func (g *Game) Update() error {
 
 	playerPos := Vec2{X: x, Y: y}
 
+	g.checkCollision()
+
 	// update all enemies
 	for _, enemy := range g.Enemies {
 		dir := playerPos.Sub(enemy.Position)
@@ -163,33 +117,12 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Draw the background
-	//w, h := g.Background.Size()
-	//tileOffsetX := int(g.Camera.PosX) % w
-	//tileOffsetY := int(g.Camera.PosY) % h
 
-	/**
-	for x := -tileOffsetX - w; x < screenWidth+w; x += w {
-		for y := -tileOffsetY - h; y < screenHeight+h; y += h {
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(x)-g.Camera.PosX, float64(y)-g.Camera.PosY)
-			screen.DrawImage(g.Background, op)
-		}
-	}
-
-	*/
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(-g.Camera.PosX, -g.Camera.PosY)
-	screen.DrawImage(g.Background, op)
+	g.Background.Draw(screen)
 
 	// Draw the platforms
 	for _, p := range g.Platforms {
 		p.Draw(screen, g.Camera.PosX, g.Camera.PosY)
-		//fmt.Printf("P:%v,%v\n", p.X, p.Y)
-
-		//ebitenutil.DebugPrintAt(screen, fmt.Sprintf("P:%v,%v", p.X, p.Y), int(p.X-g.Camera.PosX), int(p.Y-g.Camera.PosY))
-
 	}
 
 	// Draw the enemies
@@ -200,7 +133,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	x, y := g.Juno.GetPosition()
-	//op := &ebiten.DrawImageOptions{}
+	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(x-g.Camera.PosX, y-g.Camera.PosY)
 	screen.DrawImage(g.Juno.Image.(*ebiten.Image), op)
 }
@@ -210,4 +143,43 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	// For example, you could set the screen size to be half the size of the outside area:
 	screenWidth, screenHeight = outsideWidth/2, outsideHeight/2
 	return screenWidth, screenHeight
+}
+
+func (game *Game) checkCollision() {
+	ju := game.Juno
+	for _, platform := range game.Platforms {
+		nextX := ju.X + ju.VelX
+		nextY := ju.Y + ju.VelY
+
+		// Check horizontal collision
+		if nextX+float64(junoWidth) >= platform.X &&
+			nextX <= platform.X+platform.Width &&
+			ju.Y+float64(junoHeight) > platform.Y &&
+			ju.Y < platform.Y+platform.Height {
+
+			// Check if Juno is hitting the left side of the platform
+			if ju.VelX > 0 {
+				ju.X = platform.X - float64(junoWidth)
+			} else if ju.VelX < 0 { // Check if Juno is hitting the right side of the platform
+				ju.X = platform.X + platform.Width
+			}
+			ju.VelX = 0
+		}
+
+		// Check vertical collision
+		if ju.X+float64(junoWidth) > platform.X &&
+			ju.X < platform.X+platform.Width &&
+			nextY+float64(junoHeight) >= platform.Y &&
+			nextY <= platform.Y+platform.Height {
+
+			// Check if Juno is hitting the top of the platform
+			if ju.VelY > 0 {
+				ju.Y = platform.Y - float64(junoHeight)
+				//ju.JumpCount = 0
+			} else if ju.VelY < 0 { // Check if Juno is hitting the bottom of the platform
+				ju.Y = platform.Y + platform.Height
+			}
+			ju.VelY = 0
+		}
+	}
 }

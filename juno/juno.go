@@ -14,6 +14,7 @@ type Juno struct {
 	Y          float64
 	Speed      float64
 	VelY       float64
+	VelX       float64
 	Grounded   bool
 	JumpHeight float64
 	Gravity    float64
