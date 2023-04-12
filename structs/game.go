@@ -54,7 +54,7 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
 	}
 
-	platform3 := NewPlatform(float64(screenWidth)/2-250, float64(screenHeight)/2-50, 500, 30, colornames.Black)
+	platform3 := NewPlatform(float64(screenWidth)/2-250, float64(screenHeight)/2+float64(junoHeight)+50, 500, 30, colornames.Black)
 	platform1 := NewPlatform(200, 900, 500, 30, colornames.Black)
 	platform2 := NewPlatform(800, 700, 500, 30, colornames.Black)
 	game.Platforms = []*Platform{platform1, platform2, platform3}
@@ -94,6 +94,7 @@ func (g *Game) Update() error {
 	// Apply gravity
 	if !g.Juno.Grounded {
 		g.Juno.VelY -= g.Juno.Gravity
+		g.Juno.Y += g.Juno.VelY // Move this line here
 	}
 
 	// Check for collisions with platforms and apply gravity
@@ -138,8 +139,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, -g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
 	w, h := g.Background.Size()
-	for x := -w + int(g.Camera.PosX)%w - w; x < screen.Bounds().Max.X+w; x += w {
-		for y := -h + int(g.Camera.PosY)%h - h; y < screen.Bounds().Max.Y+h; y += h {
+	tileOffsetX := int(g.Camera.PosX) % w
+	tileOffsetY := int(g.Camera.PosY) % h
+	for x := -tileOffsetX - w; x < screen.Bounds().Max.X; x += w {
+		for y := -tileOffsetY - h; y < screen.Bounds().Max.Y; y += h {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(x), float64(y))
 			screen.DrawImage(g.Background, op)
