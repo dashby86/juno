@@ -26,7 +26,7 @@ func NewJuno(img image.Image, x, y, speed float64) *Juno {
 		Y:          y,
 		Speed:      speed,
 		Grounded:   false,
-		JumpHeight: 15,
+		JumpHeight: 9,
 		Gravity:    0.5,
 	}
 
@@ -34,7 +34,7 @@ func NewJuno(img image.Image, x, y, speed float64) *Juno {
 
 func (j *Juno) Jump() {
 	if j.Grounded {
-		j.VelY = +j.JumpHeight
+		j.VelY = -j.JumpHeight
 		j.Grounded = false
 	}
 }

@@ -2,6 +2,7 @@ package structs
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image/color"
 )
 
@@ -23,11 +24,8 @@ func NewPlatform(x, y, width, height float64, color color.Color) *Platform {
 	}
 }
 
-func (p *Platform) Draw(screen *ebiten.Image, cameraX, cameraY float64) {
-	platformImage := ebiten.NewImage(int(p.Width), int(p.Height))
-	platformImage.Fill(p.Color)
-
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(p.X-cameraX+float64(screen.Bounds().Dx())/2, p.Y-cameraY+float64(screen.Bounds().Dy())/2)
-	screen.DrawImage(platformImage, op)
+func (p *Platform) Draw(screen *ebiten.Image, camX, camY float64) {
+	x := p.X - camX + screenWidth/2
+	y := p.Y - camY + screenHeight/2
+	ebitenutil.DrawRect(screen, x, y, p.Width, p.Height, p.Color)
 }
