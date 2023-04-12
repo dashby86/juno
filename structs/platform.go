@@ -2,7 +2,6 @@ package structs
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image/color"
 )
 
@@ -14,18 +13,22 @@ type Platform struct {
 	Color  color.Color
 }
 
-func NewPlatform(x, y, width, height float64, color color.Color) *Platform {
+func NewPlatform(x, y, width, height float64, col color.Color) *Platform {
+	//r, g, b, _ := col.RGBA()
 	return &Platform{
 		X:      x,
 		Y:      y,
 		Width:  width,
 		Height: height,
-		Color:  color,
+		Color:  color.Black,
+		//Color:  color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 0x33},
 	}
 }
 
-func (p *Platform) Draw(screen *ebiten.Image, camX, camY float64) {
-	x := p.X - camX + screenWidth/2
-	y := p.Y - camY + screenHeight/2
-	ebitenutil.DrawRect(screen, x, y, p.Width, p.Height, p.Color)
+func (p *Platform) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(p.X, p.Y)
+	tmpImg := ebiten.NewImage(int(p.Width), int(p.Height))
+	tmpImg.Fill(p.Color)
+	screen.DrawImage(tmpImg, op)
 }

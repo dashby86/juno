@@ -8,10 +8,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+/**
 const (
-	screenWidth  = 2560
-	screenHeight = 1440
+	screenWidth  = 1920
+	screenHeight = 1080
 )
+
+*/
 
 func main() {
 	junoImage, _, err := ebitenutil.NewImageFromFile("assets/juno.png")
@@ -20,10 +23,11 @@ func main() {
 	}
 	// Create and configure background
 
+	screenWidth, screenHeight := ebiten.ScreenSizeInFullscreen()
 	junoPos := ebiten.GeoM{}
-	junoPos.Translate(screenWidth/2, float64(screenHeight-junoImage.Bounds().Max.Y))
+	junoPos.Translate(float64(screenWidth/2), float64(screenHeight-junoImage.Bounds().Max.Y))
 
-	g, err := structs.NewGame("assets/background.png", "assets/juno.png", "assets/background.png", screenWidth, screenHeight)
+	g, err := structs.NewGame("assets/background.png", "assets/juno.png", "assets/level2.png", screenWidth, screenHeight)
 	if err != nil {
 		log.Fatal(err)
 	}

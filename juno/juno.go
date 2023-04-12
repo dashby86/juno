@@ -110,10 +110,10 @@ func (j *Juno) GetHeight() int {
 	}
 }
 
-func (j *Juno) Draw(screen *ebiten.Image, cameraX, cameraY float64) {
+func (j *Juno) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	ebitenImage := j.Image.(*ebiten.Image)
 	x, y := j.GetPosition()
-	op.GeoM.Translate(x-cameraX+float64(screen.Bounds().Max.X)/2, y-cameraY+float64(screen.Bounds().Max.Y)/2)
+	op.GeoM.Translate(x/2, y/2)
 	screen.DrawImage(ebitenImage, op)
 }
