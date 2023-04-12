@@ -5,14 +5,25 @@ import (
 	"github.com/dashby86/juno/juno"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"golang.org/x/image/colornames"
 )
+
+const (
+	junoWidth    = 64
+	junoHeight   = 64
+	screenWidth  = 1920
+	screenHeight = 1080
+)
+
+// ... rest of the code
 
 type Game struct {
 	OniImage   *ebiten.Image
 	Juno       *juno.Juno
 	Background *ebiten.Image
 	Camera     *Camera
-	Enemies    []*Enemy // slice to store all enemies
+	Enemies    []*Enemy
+	Platforms  []*Platform
 }
 
 func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, screenHeight int) (*Game, error) {
@@ -43,6 +54,11 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 		Enemies:    make([]*Enemy, 0), // initialize the slice of enemies
 	}
 
+	platform3 := NewPlatform(float64(screenWidth)/2-250, float64(screenHeight)/2-50, 500, 30, colornames.Black)
+	platform1 := NewPlatform(200, 900, 500, 30, colornames.Black)
+	platform2 := NewPlatform(800, 700, 500, 30, colornames.Black)
+	game.Platforms = []*Platform{platform1, platform2, platform3}
+
 	game.Camera.PosX = float64(screenWidth) / 2
 	game.Camera.PosY = float64(screenHeight) / 2
 
@@ -70,6 +86,37 @@ func (g *Game) Update() error {
 		return fmt.Errorf("game is closed")
 	}
 
+	// Handle jump input
+	if ebiten.IsKeyPressed(ebiten.KeySpace) {
+		g.Juno.Jump()
+	}
+
+	// Apply gravity
+	if !g.Juno.Grounded {
+		g.Juno.VelY -= g.Juno.Gravity
+	}
+
+	// Check for collisions with platforms and apply gravity
+	g.Juno.Grounded = false
+	for _, platform := range g.Platforms {
+		if g.Juno.Y+float64(junoHeight) >= platform.Y && g.Juno.Y+float64(junoHeight) <= platform.Y+platform.Height &&
+			g.Juno.X+float64(junoWidth) >= platform.X && g.Juno.X <= platform.X+platform.Width {
+			g.Juno.Grounded = true
+			g.Juno.VelY = 0
+			g.Juno.Y = platform.Y - float64(junoHeight)
+		}
+	}
+
+	// Update Juno's vertical position
+	g.Juno.Y += g.Juno.VelY
+
+	// Prevent Juno from falling below the screen
+	if g.Juno.Y > screenHeight {
+		g.Juno.Y = screenHeight - float64(junoHeight)
+		g.Juno.Grounded = true
+		g.Juno.VelY = 0
+	}
+
 	x, y := g.Juno.GetPosition()
 
 	g.Camera.PosX = x + float64(g.Juno.GetWidth())/2
@@ -91,12 +138,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(-g.Camera.PosX+float64(screen.Bounds().Max.X)/2, -g.Camera.PosY+float64(screen.Bounds().Max.Y)/2)
 	w, h := g.Background.Size()
-	for x := -w + int(g.Camera.PosX)%w; x < screen.Bounds().Max.X; x += w {
-		for y := -h + int(g.Camera.PosY)%h; y < screen.Bounds().Max.Y; y += h {
+	for x := -w + int(g.Camera.PosX)%w - w; x < screen.Bounds().Max.X+w; x += w {
+		for y := -h + int(g.Camera.PosY)%h - h; y < screen.Bounds().Max.Y+h; y += h {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(x), float64(y))
 			screen.DrawImage(g.Background, op)
 		}
+	}
+
+	// Draw the platforms
+	for _, p := range g.Platforms {
+		p.Draw(screen, g.Camera.PosX, g.Camera.PosY)
 	}
 
 	// Draw the enemies

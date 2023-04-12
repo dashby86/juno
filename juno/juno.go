@@ -9,18 +9,33 @@ import (
 )
 
 type Juno struct {
-	Image image.Image
-	X     float64
-	Y     float64
-	Speed float64
+	Image      image.Image
+	X          float64
+	Y          float64
+	Speed      float64
+	VelY       float64
+	Grounded   bool
+	JumpHeight float64
+	Gravity    float64
 }
 
 func NewJuno(img image.Image, x, y, speed float64) *Juno {
 	return &Juno{
-		Image: img,
-		X:     x,
-		Y:     y,
-		Speed: speed,
+		Image:      img,
+		X:          x,
+		Y:          y,
+		Speed:      speed,
+		Grounded:   false,
+		JumpHeight: 15,
+		Gravity:    0.5,
+	}
+
+}
+
+func (j *Juno) Jump() {
+	if j.Grounded {
+		j.VelY = +j.JumpHeight
+		j.Grounded = false
 	}
 }
 
