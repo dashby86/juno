@@ -37,10 +37,10 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 
 	bg := NewBackground(bgImagePath)
 
-	borderTop := NewPlatform(-10, -10, float64(screenWidth)+20, 10, colornames.Black)
-	borderBottom := NewPlatform(-10, float64(screenHeight)-20, float64(screenWidth)+20, 20, colornames.Black)
-	borderLeft := NewPlatform(-10, -10, 10, float64(screenHeight)+20, colornames.Black)
-	borderRight := NewPlatform(float64(screenWidth), -10, 10, float64(screenHeight)+20, colornames.Black)
+	borderTop := NewPlatform(0, 0, float64(screenWidth), 10, colornames.Red)
+	borderBottom := NewPlatform(0, float64(screenHeight)-10, float64(screenWidth), 10, colornames.Green)
+	borderLeft := NewPlatform(0, 0, 10, float64(screenHeight), colornames.Blue)
+	borderRight := NewPlatform(float64(screenWidth)-10, 0, 10, float64(screenHeight), colornames.Yellow)
 
 	j := juno.NewJuno(junoImg, 100, 100, 10)
 	j.Speed = 10 // set Juno's speed to 10 pixels per frame

@@ -13,14 +13,14 @@ type Platform struct {
 	Color  color.Color
 }
 
-func NewPlatform(x, y, width, height float64, col color.Color) *Platform {
+func NewPlatform(x, y, width, height float64, color color.Color) *Platform {
 	//r, g, b, _ := col.RGBA()
 	return &Platform{
 		X:      x,
 		Y:      y,
 		Width:  width,
 		Height: height,
-		Color:  color.Black,
+		Color:  color,
 		//Color:  color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: 0x33},
 	}
 }
