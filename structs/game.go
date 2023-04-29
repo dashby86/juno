@@ -57,6 +57,7 @@ func NewGame(oniImagePath, junoImagePath, bgImagePath string, screenWidth, scree
 }
 
 func (g *Game) Update() error {
+	g.Juno.Grounded = false
 	if ebiten.IsKeyPressed(ebiten.KeyA) {
 		g.Juno.MoveLeft()
 	}
@@ -80,6 +81,8 @@ func (g *Game) Update() error {
 	} else {
 		g.Juno.VelY = 0
 	}
+
+	//fmt.Printf("Juno: {X: %f, Y: %f, VelX: %f, VelY: %f}\n", g.Juno.X, g.Juno.Y, g.Juno.VelX, g.Juno.VelY)
 
 	g.checkCollision()
 	x, y := g.Juno.GetPosition()
